@@ -1,0 +1,2160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Onto Playground — Write. Equilibrate. Think.</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@200;300;400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --void: #010108;
+        --deep: #04040e;
+        --layer: #07071a;
+        --surface: #0b0b22;
+        --edge: #14143a;
+        --muted: #252560;
+        --ghost: #404088;
+        --dim: #6060a8;
+        --pale: #9090cc;
+        --white: #e0e0ff;
+        --pure: #ffffff;
+
+        --blue: #3355ff;
+        --bright: #6688ff;
+        --soft: #99aaff;
+        --tension: #ff2255;
+        --resolve: #00ffaa;
+        --partial: #ffaa00;
+        --blocked: #ff6600;
+        --know: #00ccff;
+
+        --mono: "JetBrains Mono", monospace;
+        --serif: "Playfair Display", serif;
+        --sans: "Outfit", sans-serif;
+      }
+
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        background: var(--void);
+        color: var(--white);
+        font-family: var(--sans);
+        font-weight: 300;
+        cursor: none;
+      }
+
+      /* ── CURSOR ── */
+      #cur {
+        position: fixed;
+        width: 5px;
+        height: 5px;
+        background: var(--soft);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 9999;
+        transform: translate(-50%, -50%);
+        mix-blend-mode: screen;
+      }
+      #cur-r {
+        position: fixed;
+        width: 24px;
+        height: 24px;
+        border: 1px solid rgba(153, 170, 255, 0.25);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 9998;
+        transform: translate(-50%, -50%);
+        transition:
+          width 0.25s,
+          height 0.25s;
+      }
+
+      /* ── LAYOUT ── */
+      .app {
+        display: grid;
+        grid-template-rows: 48px 1fr 200px;
+        grid-template-columns: 1fr 1fr;
+        height: 100vh;
+        gap: 1px;
+        background: var(--edge);
+      }
+
+      /* ── TOPBAR ── */
+      .topbar {
+        grid-column: 1 / -1;
+        background: var(--deep);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        border-bottom: 1px solid var(--edge);
+        gap: 16px;
+      }
+
+      .topbar-logo {
+        font-family: var(--serif);
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--white);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .topbar-logo-badge {
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--ghost);
+        background: var(--surface);
+        border: 1px solid var(--edge);
+        padding: 2px 8px;
+      }
+
+      .topbar-examples {
+        display: flex;
+        gap: 6px;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      .ex-btn {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        color: var(--dim);
+        background: var(--surface);
+        border: 1px solid var(--edge);
+        padding: 4px 10px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s;
+        user-select: none;
+      }
+
+      .ex-btn:hover {
+        color: var(--soft);
+        border-color: var(--ghost);
+      }
+      .ex-btn.active {
+        color: var(--soft);
+        border-color: var(--blue);
+        background: rgba(51, 85, 255, 0.1);
+      }
+
+      .run-btn {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--void);
+        background: var(--soft);
+        border: none;
+        padding: 7px 20px;
+        cursor: pointer;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .run-btn:hover {
+        background: var(--white);
+      }
+      .run-btn.running {
+        background: var(--partial);
+        animation: runPulse 0.8s ease-in-out infinite;
+      }
+
+      @keyframes runPulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+
+      .run-icon {
+        font-size: 14px;
+      }
+
+      /* ── EDITOR PANE ── */
+      .editor-pane {
+        background: var(--deep);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .pane-header {
+        height: 32px;
+        background: var(--layer);
+        border-bottom: 1px solid var(--edge);
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+
+      .pane-title {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: var(--ghost);
+      }
+
+      .pane-status {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--ghost);
+        margin-left: auto;
+      }
+
+      .pane-status.ok {
+        color: var(--resolve);
+      }
+      .pane-status.err {
+        color: var(--tension);
+      }
+      .pane-status.run {
+        color: var(--partial);
+      }
+
+      .editor-wrap {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .line-numbers {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 44px;
+        background: var(--layer);
+        border-right: 1px solid var(--edge);
+        padding: 16px 0;
+        overflow: hidden;
+        pointer-events: none;
+      }
+
+      .line-num {
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 22px;
+        color: var(--muted);
+        text-align: right;
+        padding-right: 10px;
+      }
+
+      .editor-scroll {
+        position: absolute;
+        inset: 0;
+        left: 44px;
+        overflow: auto;
+      }
+
+      #editor {
+        min-height: 100%;
+        min-width: 100%;
+        padding: 16px 20px;
+        font-family: var(--mono);
+        font-size: 13px;
+        line-height: 22px;
+        color: var(--white);
+        background: transparent;
+        border: none;
+        outline: none;
+        resize: none;
+        tab-size: 2;
+        white-space: pre;
+        caret-color: var(--soft);
+        spellcheck: false;
+      }
+
+      /* ── HIGHLIGHT OVERLAY ── */
+      .highlight-overlay {
+        position: absolute;
+        inset: 0;
+        left: 44px;
+        padding: 16px 20px;
+        font-family: var(--mono);
+        font-size: 13px;
+        line-height: 22px;
+        pointer-events: none;
+        overflow: hidden;
+        white-space: pre;
+        color: transparent;
+      }
+
+      /* Syntax colors */
+      .hl-kw {
+        color: #7799ff;
+      }
+      .hl-op {
+        color: #445577;
+      }
+      .hl-val {
+        color: #00ffaa;
+      }
+      .hl-unc {
+        color: #ffaa00;
+      }
+      .hl-ten {
+        color: #ff2255;
+      }
+      .hl-cmt {
+        color: #334466;
+        font-style: italic;
+      }
+      .hl-nm {
+        color: #e0e0ff;
+      }
+      .hl-num {
+        color: #ff9966;
+      }
+      .hl-str {
+        color: #66ddaa;
+      }
+      .hl-conf {
+        color: #ffcc44;
+      }
+      .hl-know {
+        color: #00ccff;
+      }
+
+      /* ── VISUALIZATION PANE ── */
+      .viz-pane {
+        background: var(--void);
+        position: relative;
+        overflow: hidden;
+      }
+
+      #viz-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .viz-overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: 16px;
+        gap: 8px;
+      }
+
+      .viz-legend {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        color: var(--ghost);
+      }
+
+      .legend-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      /* ── BOTTOM PANEL ── */
+      .bottom-panel {
+        grid-column: 1 / -1;
+        background: var(--deep);
+        border-top: 1px solid var(--edge);
+        display: flex;
+        overflow: hidden;
+      }
+
+      .output-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border-right: 1px solid var(--edge);
+      }
+
+      .output-section:last-child {
+        border-right: none;
+      }
+
+      .output-header {
+        height: 32px;
+        background: var(--layer);
+        border-bottom: 1px solid var(--edge);
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+
+      .output-title {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: var(--ghost);
+      }
+
+      .output-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px 16px;
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.7;
+      }
+
+      /* Equilibrium display */
+      .eq-tension {
+        margin-bottom: 10px;
+        padding: 10px 14px;
+        border-left: 2px solid;
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .eq-tension.resolved {
+        border-color: var(--resolve);
+      }
+      .eq-tension.resisting {
+        border-color: var(--tension);
+      }
+      .eq-tension.partial {
+        border-color: var(--partial);
+      }
+      .eq-tension.blocked {
+        border-color: var(--blocked);
+      }
+
+      .eq-tension-id {
+        color: var(--white);
+        margin-bottom: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .eq-tension-state {
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 2px 8px;
+      }
+
+      .eq-tension.resolved .eq-tension-state {
+        color: var(--resolve);
+      }
+      .eq-tension.resisting .eq-tension-state {
+        color: var(--tension);
+      }
+      .eq-tension.partial .eq-tension-state {
+        color: var(--partial);
+      }
+      .eq-tension.blocked .eq-tension-state {
+        color: var(--blocked);
+      }
+
+      .eq-tension-detail {
+        font-size: 11px;
+        color: var(--dim);
+        line-height: 1.5;
+      }
+
+      .eq-confidence-bar {
+        height: 2px;
+        background: var(--edge);
+        margin-top: 8px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .eq-confidence-fill {
+        position: absolute;
+        inset-y: 0;
+        left: 0;
+        background: var(--resolve);
+        transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      /* Trace display */
+      .trace-line {
+        font-size: 11px;
+        color: var(--ghost);
+        display: flex;
+        gap: 10px;
+        padding: 2px 0;
+      }
+
+      .trace-pass {
+        color: var(--muted);
+        flex-shrink: 0;
+        width: 50px;
+      }
+
+      .trace-action {
+        color: var(--dim);
+        flex-shrink: 0;
+        width: 80px;
+      }
+
+      .trace-note {
+        color: var(--ghost);
+      }
+
+      /* Error display */
+      .error-line {
+        font-size: 11px;
+        color: var(--tension);
+        padding: 4px 0;
+        display: flex;
+        gap: 10px;
+      }
+
+      .error-icon {
+        flex-shrink: 0;
+      }
+
+      /* Empty state */
+      .empty-state {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 12px;
+        font-family: var(--mono);
+        text-align: center;
+      }
+
+      .empty-state-sym {
+        font-size: 28px;
+        color: var(--edge);
+        margin-bottom: 8px;
+      }
+
+      /* Keyboard shortcut hint */
+      .kb-hint {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--muted);
+        padding: 2px 6px;
+        border: 1px solid var(--edge);
+        background: var(--surface);
+      }
+
+      /* Scrollbars */
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--edge);
+        border-radius: 2px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--muted);
+      }
+
+      /* Confidence meter */
+      .confidence-meter {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--ghost);
+      }
+
+      .confidence-meter-val {
+        font-size: 18px;
+        font-weight: 500;
+        color: var(--resolve);
+        font-family: var(--mono);
+        min-width: 52px;
+      }
+
+      .confidence-meter-val.low {
+        color: var(--tension);
+      }
+      .confidence-meter-val.mid {
+        color: var(--partial);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="cur"></div>
+    <div id="cur-r"></div>
+
+    <div class="app">
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="topbar-logo">
+          Onto
+          <span class="topbar-logo-badge">Playground v0.1</span>
+        </div>
+        <div class="topbar-examples">
+          <button class="ex-btn active" data-example="triage">
+            Medical Triage
+          </button>
+          <button class="ex-btn" data-example="route">Route Planning</button>
+          <button class="ex-btn" data-example="conflict">Agent Conflict</button>
+          <button class="ex-btn" data-example="minimal">Minimal</button>
+        </div>
+        <span class="kb-hint">⌘ Enter</span>
+        <button class="run-btn" id="run-btn">
+          <span class="run-icon">▶</span> Equilibrate
+        </button>
+      </header>
+
+      <!-- EDITOR -->
+      <div class="editor-pane">
+        <div class="pane-header">
+          <span class="pane-title">Onto Source</span>
+          <span class="pane-status" id="editor-status">ready</span>
+        </div>
+        <div class="editor-wrap">
+          <div class="line-numbers" id="line-numbers"></div>
+          <div class="editor-scroll">
+            <textarea
+              id="editor"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISUALIZATION -->
+      <div class="viz-pane">
+        <div class="pane-header">
+          <span class="pane-title">Tension Field</span>
+          <div class="confidence-meter">
+            Field confidence
+            <span class="confidence-meter-val" id="conf-val">—</span>
+          </div>
+        </div>
+        <canvas id="viz-canvas"></canvas>
+        <div class="viz-overlay">
+          <div class="viz-legend">
+            <div class="legend-item">
+              <div class="legend-dot" style="background: var(--blue)"></div>
+              stable
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background: var(--resolve)"></div>
+              resolved
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background: var(--partial)"></div>
+              partial
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background: var(--tension)"></div>
+              resisting
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background: var(--blocked)"></div>
+              blocked
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM PANELS -->
+      <div class="bottom-panel">
+        <!-- EQUILIBRIUM -->
+        <div class="output-section">
+          <div class="output-header">
+            <span class="output-title">Equilibrium</span>
+          </div>
+          <div class="output-body" id="eq-output">
+            <div class="empty-state">
+              <div class="empty-state-sym">⊕</div>
+              Write Onto code and press Equilibrate
+            </div>
+          </div>
+        </div>
+
+        <!-- TRACE -->
+        <div class="output-section">
+          <div class="output-header">
+            <span class="output-title">Reasoning Trace</span>
+          </div>
+          <div class="output-body" id="trace-output">
+            <div class="empty-state">
+              <div class="empty-state-sym">∷</div>
+              Every decision will be traceable here
+            </div>
+          </div>
+        </div>
+
+        <!-- TYPE CHECK -->
+        <div class="output-section">
+          <div class="output-header">
+            <span class="output-title">Epistemic Check</span>
+          </div>
+          <div class="output-body" id="type-output">
+            <div class="empty-state">
+              <div class="empty-state-sym">~</div>
+              Honesty verification will appear here
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ═══════════════════════════════════════════════════════════════════
+      // ONTO RUNTIME — In-browser compiler + engine
+      // Everything runs client-side. No server. No dependencies.
+      // ═══════════════════════════════════════════════════════════════════
+
+      // ── LEXER ──
+      function tokenize(src) {
+        const tokens = [];
+        let i = 0,
+          line = 1;
+
+        const keywords = new Set([
+          "tension",
+          "know",
+          "wants",
+          "knows",
+          "doubts",
+          "resolves",
+          "from",
+          "confidence",
+          "valid",
+          "for",
+          "until",
+          "blocking",
+          "blocks",
+          "success",
+          "resistance",
+          "partial",
+          "blocked",
+          "risk",
+          "linked",
+          "priority",
+          "true",
+          "false",
+        ]);
+
+        while (i < src.length) {
+          // Skip spaces/tabs
+          while (
+            i < src.length &&
+            (src[i] === " " || src[i] === "\t" || src[i] === "\r")
+          )
+            i++;
+          if (i >= src.length) break;
+
+          const ch = src[i];
+
+          if (ch === "\n") {
+            tokens.push({ k: "NL", v: "\n", line });
+            i++;
+            line++;
+            continue;
+          }
+
+          // Unicode operators
+          if (src.startsWith("∷", i)) {
+            tokens.push({ k: "META", v: "∷", line });
+            i += 3;
+            continue;
+          }
+          if (src.startsWith("↔", i)) {
+            tokens.push({ k: "TEN", v: "↔", line });
+            i += 3;
+            continue;
+          }
+          if (src.startsWith("⊗", i)) {
+            tokens.push({ k: "CONF", v: "⊗", line });
+            i += 3;
+            continue;
+          }
+          if (src.startsWith("⊕", i)) {
+            tokens.push({ k: "FUSE", v: "⊕", line });
+            i += 3;
+            continue;
+          }
+          if (src.startsWith("→", i)) {
+            tokens.push({ k: "ARR", v: "→", line });
+            i += 3;
+            continue;
+          }
+
+          // ASCII operators
+          if (src.startsWith("::", i)) {
+            tokens.push({ k: "ANC", v: "::", line });
+            i += 2;
+            continue;
+          }
+          if (src.startsWith("->", i)) {
+            tokens.push({ k: "ARR", v: "->", line });
+            i += 2;
+            continue;
+          }
+          if (src.startsWith("<->", i)) {
+            tokens.push({ k: "TEN", v: "<->", line });
+            i += 3;
+            continue;
+          }
+
+          // Singles
+          if (ch === "~") {
+            tokens.push({ k: "UNC", v: "~", line });
+            i++;
+            continue;
+          }
+          if (ch === "|") {
+            tokens.push({ k: "ALT", v: "|", line });
+            i++;
+            continue;
+          }
+          if (ch === "=") {
+            tokens.push({ k: "EQ", v: "=", line });
+            i++;
+            continue;
+          }
+          if (ch === "(") {
+            tokens.push({ k: "LP", v: "(", line });
+            i++;
+            continue;
+          }
+          if (ch === ")") {
+            tokens.push({ k: "RP", v: ")", line });
+            i++;
+            continue;
+          }
+          if (ch === ",") {
+            tokens.push({ k: "COM", v: ",", line });
+            i++;
+            continue;
+          }
+
+          // Strings
+          if (ch === '"' || ch === "'") {
+            const q = ch;
+            i++;
+            let s = "";
+            while (i < src.length && src[i] !== q) {
+              s += src[i];
+              i++;
+            }
+            i++;
+            tokens.push({ k: "STR", v: s, line });
+            continue;
+          }
+
+          // Numbers
+          if (
+            (ch >= "0" && ch <= "9") ||
+            (ch === "." && src[i + 1] >= "0" && src[i + 1] <= "9")
+          ) {
+            let n = "";
+            while (i < src.length && /[\d.]/.test(src[i])) {
+              n += src[i];
+              i++;
+            }
+            if (i < src.length && /[smh]/.test(src[i])) {
+              if (src.startsWith("min", i)) {
+                n += "min";
+                i += 3;
+              } else {
+                n += src[i];
+                i++;
+              }
+              tokens.push({ k: "DUR", v: n, line });
+              continue;
+            }
+            tokens.push({ k: "NUM", v: n, line });
+            continue;
+          }
+
+          // Identifiers / keywords
+          if (/[a-zA-Z_]/.test(ch)) {
+            let w = "";
+            while (i < src.length && /[a-zA-Z0-9_]/.test(src[i])) {
+              w += src[i];
+              i++;
+            }
+            tokens.push({
+              k: keywords.has(w) ? "KW_" + w.toUpperCase() : "ID",
+              v: w,
+              line,
+            });
+            continue;
+          }
+
+          i++; // skip unknown
+        }
+        tokens.push({ k: "EOF", v: "", line });
+        return tokens;
+      }
+
+      // ── PARSER → AST ──
+      function parse(tokens) {
+        let pos = 0;
+        const errors = [];
+
+        function peek() {
+          return tokens[pos] || { k: "EOF", v: "" };
+        }
+        function adv() {
+          return tokens[pos++];
+        }
+        function skipNL() {
+          while (peek().k === "NL") adv();
+        }
+        function atEnd() {
+          return peek().k === "EOF";
+        }
+        function atTopLevel() {
+          const k = peek().k;
+          return (
+            k === "KW_TENSION" || k === "KW_KNOW" || k === "META" || k === "EOF"
+          );
+        }
+        function atClause() {
+          const k = peek().k;
+          return (
+            k === "KW_WANTS" ||
+            k === "KW_RESOLVES" ||
+            k === "KW_DOUBTS" ||
+            k === "KW_LINKED" ||
+            k === "KW_PRIORITY" ||
+            k === "KW_KNOWS" ||
+            atTopLevel()
+          );
+        }
+
+        function parseIdent() {
+          const t = peek();
+          if (t.k === "ID" || t.k.startsWith("KW_")) {
+            adv();
+            return t.v;
+          }
+          return null;
+        }
+        function parseStr() {
+          const t = peek();
+          if (t.k === "STR" || t.k === "ID" || t.k.startsWith("KW_")) {
+            adv();
+            return t.v;
+          }
+          return "";
+        }
+        function parseNum() {
+          const t = peek();
+          if (t.k === "NUM" || t.k === "DUR") {
+            adv();
+            return parseFloat(t.v);
+          }
+          return 0.5;
+        }
+        function parseDur() {
+          const t = peek();
+          if (t.k === "DUR") {
+            adv();
+            const v = t.v;
+            if (v.endsWith("min")) return parseFloat(v) * 60000;
+            if (v.endsWith("h")) return parseFloat(v) * 3600000;
+            return parseFloat(v) * 1000;
+          }
+          return parseNum() * 1000;
+        }
+        function parseVal() {
+          const t = peek();
+          if (t.k === "STR") {
+            adv();
+            return { raw: t.v, type: "string" };
+          }
+          if (t.k === "NUM") {
+            adv();
+            return { raw: t.v, type: "number" };
+          }
+          if (t.k === "KW_TRUE") {
+            adv();
+            return { raw: "true", type: "bool" };
+          }
+          if (t.k === "KW_FALSE") {
+            adv();
+            return { raw: "false", type: "bool" };
+          }
+          const id = parseIdent();
+          return { raw: id || "", type: "id" };
+        }
+        function parseRestLine() {
+          const parts = [];
+          while (!atEnd() && peek().k !== "NL") {
+            parts.push(peek().v);
+            adv();
+          }
+          return parts.join(" ");
+        }
+
+        function parseKnow() {
+          adv(); // consume 'know'
+          const id = parseIdent();
+          if (peek().k === "EQ") adv();
+          const value = parseVal();
+          let from = "unknown",
+            confidence = 0.8,
+            validFor = undefined;
+          while (!atEnd() && !atTopLevel() && peek().k !== "NL") {
+            if (peek().k === "KW_FROM") {
+              adv();
+              from = parseStr();
+            } else if (peek().k === "KW_CONFIDENCE") {
+              adv();
+              confidence = parseNum();
+            } else if (peek().k === "KW_VALID") {
+              adv();
+              if (peek().k === "KW_FOR") {
+                adv();
+                validFor = parseDur();
+              }
+            } else break;
+          }
+          return { kind: "know", id, value, from, confidence, validFor };
+        }
+
+        function parseTension() {
+          adv(); // consume 'tension'
+          const id = parseIdent();
+          let linkedTo = null;
+          if (peek().k === "TEN") {
+            adv();
+            linkedTo = parseIdent();
+          }
+          if (peek().k === "ANC") adv();
+          skipNL();
+
+          let wants = "unspecified";
+          let doubts = [];
+          let resolves = [];
+          let linked = [];
+          let priority = 0.5;
+
+          while (!atEnd() && !atTopLevel()) {
+            skipNL();
+            if (atTopLevel()) break;
+            const k = peek().k;
+
+            if (k === "KW_WANTS") {
+              adv();
+              if (peek().k === "ARR") adv();
+              wants = parseRestLine().trim();
+            } else if (k === "KW_DOUBTS") {
+              adv();
+              if (peek().k === "ARR") adv();
+              const about = parseStr();
+              let severity = "medium";
+              let blocksPath = [];
+              if (peek().k === "KW_BLOCKING") {
+                severity = "blocking";
+                adv();
+              }
+              if (peek().k === "KW_BLOCKS") {
+                adv();
+                blocksPath.push(parseStr());
+              }
+              doubts.push({ about, severity, blocksPath });
+            } else if (k === "KW_LINKED") {
+              adv();
+              if (peek().k === "ARR") adv();
+              linked.push(parseStr());
+              while (peek().k === "COM") {
+                adv();
+                linked.push(parseStr());
+              }
+            } else if (k === "KW_PRIORITY") {
+              adv();
+              if (peek().k === "EQ") adv();
+              priority = parseNum();
+            } else if (k === "KW_RESOLVES") {
+              adv();
+              if (peek().k === "ARR") adv();
+              skipNL();
+              resolves = parseResolves();
+            } else if (k === "META") {
+              adv();
+              parseRestLine();
+            } else if (k === "KW_KNOWS") {
+              adv();
+              if (peek().k === "ARR") adv();
+              parseRestLine();
+            } else {
+              break;
+            }
+            skipNL();
+          }
+
+          if (linkedTo && !linked.includes(linkedTo)) linked.unshift(linkedTo);
+          return {
+            kind: "tension",
+            id,
+            wants,
+            doubts,
+            resolves,
+            linked,
+            priority,
+          };
+        }
+
+        function parseResolves() {
+          const paths = [];
+          let first = true;
+          while (!atEnd()) {
+            skipNL();
+            if (atClause()) break;
+            const k = peek().k;
+            let op = null;
+            if (k === "ALT") {
+              op = "|";
+              adv();
+            } else if (k === "CONF") {
+              op = "⊗";
+              adv();
+            } else if (k === "FUSE") {
+              op = "⊕";
+              adv();
+            } else if (!first) break;
+
+            skipNL();
+            if (atClause()) break;
+
+            let pathKind = "success";
+            const kt = peek().k;
+            if (kt === "KW_SUCCESS") {
+              pathKind = "success";
+              adv();
+            }
+            if (kt === "KW_RESISTANCE") {
+              pathKind = "resistance";
+              adv();
+            }
+            if (kt === "KW_PARTIAL") {
+              pathKind = "partial";
+              adv();
+            }
+            if (kt === "KW_BLOCKED") {
+              pathKind = "blocked";
+              adv();
+            }
+
+            const outcome = parseVal();
+            let conf = 0.7,
+              risk = "low",
+              reason = "";
+
+            while (peek().k === "UNC" || peek().k === "META") {
+              if (peek().k === "META") {
+                adv();
+                parseRestLine();
+                break;
+              }
+              adv();
+              const mk = parseStr();
+              if (peek().k === "LP") {
+                adv();
+                const mv = peek();
+                let mval = "";
+                if (mv.k === "NUM") {
+                  mval = mv.v;
+                  adv();
+                } else mval = parseStr();
+                if (peek().k === "RP") adv();
+                if (mk === "conf") conf = parseFloat(mval);
+                else if (mk === "risk") risk = mval;
+                else if (mk === "reason") reason = mval;
+              }
+            }
+            if (peek().k === "META") {
+              adv();
+              parseRestLine();
+            }
+
+            paths.push({
+              op,
+              pathKind,
+              outcome:
+                pathKind === "resistance"
+                  ? outcome.raw || reason
+                  : outcome.raw || "resolved",
+              conf,
+              risk,
+              reason,
+            });
+            first = false;
+          }
+          return paths;
+        }
+
+        const stmts = [];
+        skipNL();
+        while (!atEnd()) {
+          skipNL();
+          if (atEnd()) break;
+          const k = peek().k;
+          if (k === "KW_KNOW") {
+            stmts.push(parseKnow());
+            skipNL();
+          } else if (k === "KW_TENSION") {
+            stmts.push(parseTension());
+            skipNL();
+          } else if (k === "META") {
+            adv();
+            parseRestLine();
+            skipNL();
+          } else {
+            adv();
+          }
+        }
+        return { stmts, errors };
+      }
+
+      // ── ENGINE ──
+      function equilibrate(stmts) {
+        const now = Date.now();
+        const sharedKnow = {};
+        const tensions = {};
+        const trace = [];
+        let pass = 0;
+
+        for (const s of stmts) {
+          if (s.kind === "know") {
+            sharedKnow[s.id] = {
+              value:
+                s.value.type === "number"
+                  ? parseFloat(s.value.raw)
+                  : s.value.raw,
+              origin: s.from,
+              confidence: s.confidence,
+              expiry: s.validFor ? now + s.validFor : Infinity,
+            };
+          }
+          if (s.kind === "tension") {
+            tensions[s.id] = {
+              ...s,
+              state: "active",
+              resolution: null,
+              knows: { ...sharedKnow },
+            };
+          }
+        }
+
+        // Inject shared knowledge into tensions
+        for (const id in tensions) {
+          trace.push({
+            pass: 0,
+            action: "activate",
+            note: `"${id}" awakened with ${Object.keys(tensions[id].knows).length} knowledge entries`,
+          });
+        }
+
+        // Equilibration passes
+        const MAX = 20;
+        while (pass < MAX) {
+          pass++;
+          let changed = false;
+          for (const id in tensions) {
+            const t = tensions[id];
+            if (t.state !== "active") continue;
+
+            // Inject knowledge from linked tensions
+            for (const lid of t.linked || []) {
+              const lt = tensions[lid];
+              if (!lt) continue;
+              for (const k in lt.knows) {
+                if (
+                  !t.knows[k] ||
+                  lt.knows[k].confidence > t.knows[k].confidence
+                ) {
+                  t.knows[k] = lt.knows[k];
+                }
+              }
+            }
+
+            // Check blocking doubts
+            let blocked = null;
+            for (const d of t.doubts || []) {
+              if (d.severity === "blocking") {
+                blocked = d;
+                break;
+              }
+            }
+
+            // Try resolution paths
+            let resolved = false;
+            for (const path of t.resolves || []) {
+              if (path.op === "⊗") continue; // skip conflict paths
+              if (path.pathKind === "resistance") {
+                t.state = "resisting";
+                t.resolution = {
+                  outcome: path.outcome,
+                  confidence: 0,
+                  kind: "resistance",
+                };
+                trace.push({
+                  pass,
+                  action: "resisting",
+                  note: `"${id}" — ${path.outcome}`,
+                });
+                changed = true;
+                resolved = true;
+                break;
+              }
+              if (path.pathKind === "blocked") {
+                t.state = "blocked";
+                t.resolution = {
+                  outcome: path.outcome,
+                  confidence: 0,
+                  kind: "blocked",
+                };
+                trace.push({
+                  pass,
+                  action: "blocked",
+                  note: `"${id}" — blocked by ${path.outcome}`,
+                });
+                changed = true;
+                resolved = true;
+                break;
+              }
+              if (path.pathKind === "partial") {
+                t.state = "partial";
+                t.resolution = {
+                  outcome: path.outcome,
+                  confidence: path.conf,
+                  kind: "partial",
+                };
+                changed = true;
+                resolved = true;
+                break;
+              }
+              // Success path
+              const conf = path.conf;
+              t.state = "resolved";
+              t.resolution = {
+                outcome: path.outcome,
+                confidence: conf,
+                kind: "success",
+              };
+              trace.push({
+                pass,
+                action: "resolved",
+                note: `"${id}" confidence=${(conf * 100).toFixed(1)}%`,
+              });
+              changed = true;
+              resolved = true;
+              break;
+            }
+
+            if (!resolved && (t.resolves || []).length === 0) {
+              t.state = "resisting";
+              t.resolution = {
+                outcome: "no resolution paths defined",
+                confidence: 0,
+                kind: "resistance",
+              };
+              changed = true;
+            }
+          }
+
+          const active = Object.values(tensions).filter(
+            (t) => t.state === "active",
+          ).length;
+          if (active === 0 || !changed) break;
+        }
+
+        // Compute field confidence
+        const resolved = Object.values(tensions).filter(
+          (t) => t.state === "resolved",
+        );
+        const allConfs = resolved.map((t) => t.resolution.confidence);
+        const fieldConf =
+          allConfs.length > 0
+            ? allConfs.reduce((a, b) => a + b, 0) / Object.keys(tensions).length
+            : 0;
+
+        return { tensions, sharedKnow, trace, passes: pass, fieldConf };
+      }
+
+      // ── TYPE CHECK ──
+      function typeCheck(stmts, result) {
+        const issues = [];
+        const now = Date.now();
+
+        // Check expired knowledge
+        for (const s of stmts) {
+          if (s.kind === "know" && s.validFor) {
+            // We can't actually detect expiry at parse time for demo — skip
+          }
+        }
+
+        // Check confidence inflation
+        for (const id in result.tensions) {
+          const t = result.tensions[id];
+          const knowConfs = Object.values(t.knows).map((k) => k.confidence);
+          if (knowConfs.length > 0) {
+            const maxAllowable = Math.min(...knowConfs);
+            for (const path of t.resolves || []) {
+              if (path.conf > maxAllowable * 1.15 + 0.01) {
+                issues.push({
+                  kind: "warning",
+                  msg: `"${id}": claims ${(path.conf * 100).toFixed(0)}% confidence but knowledge base supports max ${(maxAllowable * 100).toFixed(0)}%`,
+                });
+              }
+            }
+          }
+        }
+
+        const hasErrors = issues.some((i) => i.kind === "error");
+        return { valid: !hasErrors, issues };
+      }
+
+      // ── SYNTAX HIGHLIGHTER ──
+      function highlight(code) {
+        const kws = [
+          "tension",
+          "know",
+          "wants",
+          "knows",
+          "doubts",
+          "resolves",
+          "from",
+          "confidence",
+          "valid",
+          "for",
+          "until",
+          "blocking",
+          "blocks",
+          "success",
+          "resistance",
+          "partial",
+          "blocked",
+          "risk",
+          "linked",
+          "priority",
+          "true",
+          "false",
+        ];
+        const lines = code.split("\n");
+        return lines
+          .map((line) => {
+            // Meta annotation
+            if (/^[\s]*∷/.test(line)) {
+              return `<span class="hl-cmt">${esc(line)}</span>`;
+            }
+
+            let result = "";
+            let i = 0;
+            const chars = [...line];
+
+            while (i < chars.length) {
+              // Unicode ops
+              const rest = chars.slice(i).join("");
+              if (rest.startsWith("∷")) {
+                result += `<span class="hl-cmt">∷</span>`;
+                i += 1;
+                continue;
+              }
+              if (rest.startsWith("↔")) {
+                result += `<span class="hl-op">↔</span>`;
+                i += 1;
+                continue;
+              }
+              if (rest.startsWith("⊗")) {
+                result += `<span class="hl-ten">⊗</span>`;
+                i += 1;
+                continue;
+              }
+              if (rest.startsWith("⊕")) {
+                result += `<span class="hl-val">⊕</span>`;
+                i += 1;
+                continue;
+              }
+              if (rest.startsWith("→")) {
+                result += `<span class="hl-op">→</span>`;
+                i += 1;
+                continue;
+              }
+              if (rest.startsWith("::")) {
+                result += `<span class="hl-op">::</span>`;
+                i += 2;
+                continue;
+              }
+              if (chars[i] === "~") {
+                result += `<span class="hl-unc">~</span>`;
+                i++;
+                continue;
+              }
+              if (chars[i] === "|") {
+                result += `<span class="hl-op">|</span>`;
+                i++;
+                continue;
+              }
+
+              // Number
+              if (/[\d]/.test(chars[i])) {
+                let n = "";
+                while (i < chars.length && /[\d.]/.test(chars[i])) {
+                  n += chars[i];
+                  i++;
+                }
+                if (i < chars.length && /[smh]/.test(chars[i])) {
+                  n += chars[i];
+                  i++;
+                }
+                result += `<span class="hl-num">${esc(n)}</span>`;
+                continue;
+              }
+
+              // String
+              if (chars[i] === '"' || chars[i] === "'") {
+                const q = chars[i];
+                let s = q;
+                i++;
+                while (i < chars.length && chars[i] !== q) {
+                  s += chars[i];
+                  i++;
+                }
+                s += q;
+                i++;
+                result += `<span class="hl-str">${esc(s)}</span>`;
+                continue;
+              }
+
+              // Word
+              if (/[a-zA-Z_]/.test(chars[i])) {
+                let w = "";
+                while (i < chars.length && /[a-zA-Z0-9_]/.test(chars[i])) {
+                  w += chars[i];
+                  i++;
+                }
+                if (kws.includes(w))
+                  result += `<span class="hl-kw">${esc(w)}</span>`;
+                else if (w === "conf" || w === "risk")
+                  result += `<span class="hl-unc">${esc(w)}</span>`;
+                else result += `<span class="hl-nm">${esc(w)}</span>`;
+                continue;
+              }
+
+              result += esc(chars[i]);
+              i++;
+            }
+            return result;
+          })
+          .join("\n");
+      }
+
+      function esc(s) {
+        return s
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      // ═══════════════════════════════════════════════════════════════════
+      // EXAMPLES
+      // ═══════════════════════════════════════════════════════════════════
+
+      const EXAMPLES = {
+        triage: `∷ Emergency Medical Triage
+∷ A field of tensions seeking equilibrium
+
+know heart_rate = 142 from sensor confidence 0.99
+know blood_pressure = "90/60" from sensor confidence 0.94
+know known_medication = metformin from patient_report confidence 0.80
+
+tension patient_state ::
+  wants → assess_critical_status
+  resolves →
+    critical ~ conf(0.91) ~ risk(low)
+
+tension diagnosis ↔ patient_state ::
+  wants → identify_cause_of_tachycardia
+  linked → patient_state
+  resolves →
+    hypovolemic_shock ~ conf(0.74) ~ risk(low)
+    | arrhythmia_possible ~ conf(0.51) ~ risk(medium)
+
+tension treatment ::
+  wants → stabilize_patient_immediately
+  priority = 1.0
+  linked → diagnosis, patient_state
+  doubts → unknown_allergies blocking blocks epinephrine
+  resolves →
+    saline_IV ~ conf(0.93) ~ risk(low)
+    ⊗ epinephrine ∷ blocked until allergies confirmed`,
+
+        route: `∷ Route Planning Under Uncertainty
+∷ Two knowledge sources disagree
+
+know traffic_a_to_b = "moderate" from sensor_north confidence 0.82
+know traffic_b_to_c = "clear" from sensor_south confidence 0.91
+know weather = "rain" from forecast confidence 0.75
+know estimated_time = 28 from model confidence 0.70
+
+tension evaluate_route ::
+  wants → find_optimal_path
+  linked → check_conditions
+  resolves →
+    route_A_B_C ~ conf(0.78) ~ risk(low)
+    | route_A_D_C ~ conf(0.61) ~ risk(medium)
+
+tension check_conditions ::
+  wants → assess_travel_safety
+  resolves →
+    safe_with_caution ~ conf(0.75) ~ risk(low)
+
+tension time_estimate ::
+  wants → estimate_arrival
+  linked → check_conditions
+  resolves →
+    thirty_two_minutes ~ conf(0.70) ~ risk(low)`,
+
+        conflict: `∷ Two Agents — Conflicting Knowledge
+∷ This is not a bug. It is structured information.
+
+know road_status = "clear" from ground_agent confidence 0.85
+know road_status_satellite = "blocked" from satellite confidence 0.91
+
+tension ground_perspective ::
+  wants → determine_road_status
+  resolves →
+    road_is_clear ~ conf(0.85) ~ risk(low)
+
+tension satellite_perspective ::
+  wants → determine_road_status
+  resolves →
+    road_is_blocked ~ conf(0.91) ~ risk(low)
+
+tension reconcile ::
+  wants → produce_unified_assessment
+  linked → ground_perspective, satellite_perspective
+  resolves →
+    prefer_satellite_more_recent ~ conf(0.88) ~ risk(medium)
+    | defer_to_human ~ conf(0.50) ~ risk(low)`,
+
+        minimal: `∷ The simplest possible Onto program
+
+know temperature = 98.6 from thermometer confidence 0.97
+
+tension assess ::
+  wants → determine_if_fever
+  resolves →
+    normal ~ conf(0.95) ~ risk(minimal)`,
+      };
+
+      // ═══════════════════════════════════════════════════════════════════
+      // UI STATE
+      // ═══════════════════════════════════════════════════════════════════
+
+      let lastResult = null;
+      let vizNodes = [];
+      let vizAnimId = null;
+      let vizT = 0;
+
+      // ── CANVAS VIZ ──
+      const canvas = document.getElementById("viz-canvas");
+      const ctx = canvas.getContext("2d");
+
+      function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+      }
+
+      const STATE_COLORS = {
+        active: [51, 85, 255],
+        resolved: [0, 255, 170],
+        resisting: [255, 34, 85],
+        partial: [255, 170, 0],
+        blocked: [255, 102, 0],
+        dormant: [40, 40, 80],
+      };
+
+      function initVizNodes(tensionNames) {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const r = Math.min(canvas.width, canvas.height) * 0.3;
+
+        vizNodes = tensionNames.map((name, i) => {
+          const angle = (i / tensionNames.length) * Math.PI * 2 - Math.PI / 2;
+          return {
+            name,
+            x: cx + Math.cos(angle) * r,
+            y: cy + Math.sin(angle) * r,
+            vx: (Math.random() - 0.5) * 0.3,
+            vy: (Math.random() - 0.5) * 0.3,
+            phase: Math.random() * Math.PI * 2,
+            state: "active",
+            conf: 0,
+            targetX: cx + Math.cos(angle) * r,
+            targetY: cy + Math.sin(angle) * r,
+          };
+        });
+      }
+
+      function updateVizFromResult(result) {
+        if (!result) return;
+        for (const n of vizNodes) {
+          const t = result.tensions[n.name];
+          if (t) {
+            n.state = t.state;
+            n.conf = t.resolution?.confidence ?? 0;
+          }
+        }
+      }
+
+      function drawViz() {
+        vizT += 0.006;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (vizNodes.length === 0) {
+          // Draw idle field
+          drawIdleField();
+          vizAnimId = requestAnimationFrame(drawViz);
+          return;
+        }
+
+        // Gentle drift toward target
+        for (const n of vizNodes) {
+          n.x += (n.targetX - n.x) * 0.02 + n.vx;
+          n.y += (n.targetY - n.y) * 0.02 + n.vy;
+          n.vx += (Math.random() - 0.5) * 0.05;
+          n.vx *= 0.98;
+          n.vy += (Math.random() - 0.5) * 0.05;
+          n.vy *= 0.98;
+        }
+
+        // Draw connections
+        for (let i = 0; i < vizNodes.length; i++) {
+          for (let j = i + 1; j < vizNodes.length; j++) {
+            const a = vizNodes[i],
+              b = vizNodes[j];
+            const dx = b.x - a.x,
+              dy = b.y - a.y;
+            const d = Math.hypot(dx, dy);
+            const ca = STATE_COLORS[a.state] || STATE_COLORS.active;
+            const cb = STATE_COLORS[b.state] || STATE_COLORS.active;
+            const r = (ca[0] + cb[0]) >> 1,
+              g = (ca[1] + cb[1]) >> 1,
+              bl = (ca[2] + cb[2]) >> 1;
+            const alpha = Math.max(0, 1 - d / 280) * 0.25;
+
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(${r},${g},${bl},${alpha})`;
+            ctx.lineWidth = 1;
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.stroke();
+          }
+        }
+
+        // Draw nodes
+        for (const n of vizNodes) {
+          const pulse = (Math.sin(vizT + n.phase) + 1) / 2;
+          const [r, g, b] = STATE_COLORS[n.state] || STATE_COLORS.active;
+          const radius = 14 + pulse * 6;
+
+          // Glow
+          const grd = ctx.createRadialGradient(
+            n.x,
+            n.y,
+            0,
+            n.x,
+            n.y,
+            radius * 2.5,
+          );
+          grd.addColorStop(0, `rgba(${r},${g},${b},${0.15 + pulse * 0.1})`);
+          grd.addColorStop(1, `rgba(${r},${g},${b},0)`);
+          ctx.beginPath();
+          ctx.fillStyle = grd;
+          ctx.arc(n.x, n.y, radius * 2.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Node
+          ctx.beginPath();
+          ctx.fillStyle = `rgba(${r},${g},${b},${0.6 + pulse * 0.3})`;
+          ctx.arc(n.x, n.y, radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Confidence ring (for resolved)
+          if (n.state === "resolved" && n.conf > 0) {
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(0,255,170,0.5)`;
+            ctx.lineWidth = 2;
+            ctx.arc(
+              n.x,
+              n.y,
+              radius + 6,
+              -Math.PI / 2,
+              -Math.PI / 2 + n.conf * Math.PI * 2,
+            );
+            ctx.stroke();
+          }
+
+          // Label
+          ctx.fillStyle = "rgba(224,224,255,0.9)";
+          ctx.font = "11px JetBrains Mono, monospace";
+          ctx.textAlign = "center";
+          ctx.fillText(n.name, n.x, n.y + radius + 16);
+
+          if (n.state === "resolved") {
+            ctx.fillStyle = "rgba(0,255,170,0.7)";
+            ctx.font = "10px JetBrains Mono, monospace";
+            ctx.fillText(
+              `${(n.conf * 100).toFixed(0)}%`,
+              n.x,
+              n.y + radius + 28,
+            );
+          }
+        }
+
+        vizAnimId = requestAnimationFrame(drawViz);
+      }
+
+      function drawIdleField() {
+        // Ambient particles
+        const N = 20;
+        for (let i = 0; i < N; i++) {
+          const x =
+            canvas.width * (0.1 + (0.8 * ((i * 137 + vizT * 10) % 100)) / 100);
+          const y =
+            canvas.height * (0.1 + (0.8 * ((i * 79 + vizT * 7) % 100)) / 100);
+          const a = ((Math.sin(vizT + i) + 1) / 2) * 0.08;
+          ctx.beginPath();
+          ctx.fillStyle = `rgba(51,85,255,${a})`;
+          ctx.arc(x, y, 2 + a * 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // ── RENDER RESULTS ──
+      function renderEquilibrium(result) {
+        const out = document.getElementById("eq-output");
+        if (!result) {
+          out.innerHTML =
+            '<div class="empty-state"><div class="empty-state-sym">⊕</div>Press Equilibrate</div>';
+          return;
+        }
+
+        const { tensions, fieldConf } = result;
+        let html = "";
+
+        for (const id in tensions) {
+          const t = tensions[id];
+          const stateClass = t.state;
+          const stateLabel = t.state.toUpperCase();
+          const conf = t.resolution?.confidence ?? 0;
+
+          html += `<div class="eq-tension ${stateClass}">
+      <div class="eq-tension-id">
+        <span>${id}</span>
+        <span class="eq-tension-state">${stateLabel}</span>
+      </div>
+      <div class="eq-tension-detail">`;
+
+          if (t.resolution) {
+            if (t.resolution.outcome)
+              html += `outcome: ${t.resolution.outcome}<br>`;
+            if (conf > 0) html += `confidence: ${(conf * 100).toFixed(1)}%`;
+          }
+
+          html += `</div>`;
+
+          if (conf > 0) {
+            html += `<div class="eq-confidence-bar">
+        <div class="eq-confidence-fill" style="width:${conf * 100}%;background:${conf > 0.7 ? "var(--resolve)" : conf > 0.4 ? "var(--partial)" : "var(--tension)"}"></div>
+      </div>`;
+          }
+          html += `</div>`;
+        }
+
+        out.innerHTML =
+          html ||
+          '<div class="empty-state"><div class="empty-state-sym">∅</div>No tensions found</div>';
+
+        // Update confidence meter
+        const confVal = document.getElementById("conf-val");
+        const pct = (fieldConf * 100).toFixed(1);
+        confVal.textContent = pct + "%";
+        confVal.className =
+          "confidence-meter-val" +
+          (fieldConf > 0.7 ? "" : fieldConf > 0.4 ? " mid" : " low");
+      }
+
+      function renderTrace(result) {
+        const out = document.getElementById("trace-output");
+        if (!result) {
+          out.innerHTML =
+            '<div class="empty-state"><div class="empty-state-sym">∷</div>Trace will appear here</div>';
+          return;
+        }
+
+        let html = "";
+        for (const step of result.trace) {
+          html += `<div class="trace-line">
+      <span class="trace-pass">pass ${step.pass}</span>
+      <span class="trace-action">${step.action}</span>
+      <span class="trace-note">${step.note || ""}</span>
+    </div>`;
+        }
+        html += `<div class="trace-line" style="margin-top:8px;color:var(--ghost)">
+    <span class="trace-pass">total</span>
+    <span class="trace-action">${result.passes} pass${result.passes !== 1 ? "es" : ""}</span>
+    <span class="trace-note">field confidence: ${(result.fieldConf * 100).toFixed(1)}%</span>
+  </div>`;
+
+        out.innerHTML = html;
+      }
+
+      function renderTypeCheck(issues) {
+        const out = document.getElementById("type-output");
+        if (!issues) {
+          out.innerHTML =
+            '<div class="empty-state"><div class="empty-state-sym">~</div>Type check will appear here</div>';
+          return;
+        }
+
+        if (issues.length === 0) {
+          out.innerHTML = `<div style="color:var(--resolve);font-family:var(--mono);font-size:12px;padding:8px 0">
+      ✓ Epistemically valid<br>
+      <span style="color:var(--ghost);font-size:11px">Every fact is situated.<br>Every confidence is earned.<br>Every derivation is traceable.</span>
+    </div>`;
+          return;
+        }
+
+        let html = "";
+        for (const issue of issues) {
+          const color =
+            issue.kind === "error" ? "var(--tension)" : "var(--partial)";
+          html += `<div class="error-line" style="color:${color}">
+      <span class="error-icon">${issue.kind === "error" ? "✕" : "⚠"}</span>
+      <span>${issue.msg}</span>
+    </div>`;
+        }
+        out.innerHTML = html;
+      }
+
+      // ── RUN ──
+      function run() {
+        const code = document.getElementById("editor").value;
+        if (!code.trim()) return;
+
+        const btn = document.getElementById("run-btn");
+        const status = document.getElementById("editor-status");
+        btn.classList.add("running");
+        status.textContent = "compiling...";
+        status.className = "pane-status run";
+
+        setTimeout(() => {
+          try {
+            const tokens = tokenize(code);
+            const { stmts, errors } = parse(tokens);
+
+            if (errors.length > 0) {
+              status.textContent = `${errors.length} error${errors.length > 1 ? "s" : ""}`;
+              status.className = "pane-status err";
+              btn.classList.remove("running");
+              return;
+            }
+
+            const result = equilibrate(stmts);
+            lastResult = result;
+
+            const typeResult = typeCheck(stmts, result);
+
+            // Update viz
+            const tensionNames = stmts
+              .filter((s) => s.kind === "tension")
+              .map((s) => s.id);
+            if (tensionNames.length > 0) {
+              initVizNodes(tensionNames);
+              // Animate resolution
+              setTimeout(() => updateVizFromResult(result), 400);
+            }
+
+            renderEquilibrium(result);
+            renderTrace(result);
+            renderTypeCheck(typeResult.issues);
+
+            const errCount = typeResult.issues.filter(
+              (i) => i.kind === "error",
+            ).length;
+            const warnCount = typeResult.issues.filter(
+              (i) => i.kind === "warning",
+            ).length;
+
+            if (errCount > 0) {
+              status.textContent = `${errCount} epistemic error${errCount > 1 ? "s" : ""}`;
+              status.className = "pane-status err";
+            } else if (warnCount > 0) {
+              status.textContent = `${warnCount} warning${warnCount > 1 ? "s" : ""}`;
+              status.className = "pane-status run";
+            } else {
+              const resolved = Object.values(result.tensions).filter(
+                (t) => t.state === "resolved",
+              ).length;
+              const total = Object.keys(result.tensions).length;
+              status.textContent = `${resolved}/${total} resolved · ${(result.fieldConf * 100).toFixed(0)}% conf`;
+              status.className = "pane-status ok";
+            }
+          } catch (e) {
+            status.textContent = "error";
+            status.className = "pane-status err";
+            console.error(e);
+          }
+
+          btn.classList.remove("running");
+        }, 80);
+      }
+
+      // ── EDITOR SETUP ──
+      function updateLineNumbers() {
+        const lines = document.getElementById("editor").value.split("\n");
+        const nums = document.getElementById("line-numbers");
+        nums.innerHTML = lines
+          .map((_, i) => `<div class="line-num">${i + 1}</div>`)
+          .join("");
+      }
+
+      function setExample(name) {
+        document
+          .querySelectorAll(".ex-btn")
+          .forEach((b) =>
+            b.classList.toggle("active", b.dataset.example === name),
+          );
+        document.getElementById("editor").value = EXAMPLES[name] || "";
+        updateLineNumbers();
+        document.getElementById("editor-status").textContent = "ready";
+        document.getElementById("editor-status").className = "pane-status";
+        document.getElementById("conf-val").textContent = "—";
+        renderEquilibrium(null);
+        renderTrace(null);
+        renderTypeCheck(null);
+        lastResult = null;
+        vizNodes = [];
+      }
+
+      // ── INIT ──
+      document.addEventListener("DOMContentLoaded", () => {
+        const editor = document.getElementById("editor");
+
+        // Cursor
+        const cur = document.getElementById("cur");
+        const curR = document.getElementById("cur-r");
+        let mx = 0,
+          my = 0,
+          rx = 0,
+          ry = 0;
+        document.addEventListener("mousemove", (e) => {
+          mx = e.clientX;
+          my = e.clientY;
+          cur.style.left = mx + "px";
+          cur.style.top = my + "px";
+        });
+        (function ar() {
+          rx += (mx - rx) * 0.12;
+          ry += (my - ry) * 0.12;
+          curR.style.left = rx + "px";
+          curR.style.top = ry + "px";
+          requestAnimationFrame(ar);
+        })();
+
+        // Load first example
+        setExample("triage");
+
+        // Example buttons
+        document.querySelectorAll(".ex-btn").forEach((b) => {
+          b.addEventListener("click", () => setExample(b.dataset.example));
+        });
+
+        // Run button
+        document.getElementById("run-btn").addEventListener("click", run);
+
+        // Keyboard shortcut
+        editor.addEventListener("keydown", (e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+            e.preventDefault();
+            run();
+          }
+          if (e.key === "Tab") {
+            e.preventDefault();
+            const s = editor.selectionStart,
+              end = editor.selectionEnd;
+            editor.value =
+              editor.value.substring(0, s) + "  " + editor.value.substring(end);
+            editor.selectionStart = editor.selectionEnd = s + 2;
+            updateLineNumbers();
+          }
+        });
+
+        editor.addEventListener("input", updateLineNumbers);
+        editor.addEventListener("scroll", () => {
+          document.querySelector(".editor-scroll").scrollTop = editor.scrollTop;
+        });
+
+        // Canvas
+        resizeCanvas();
+        window.addEventListener("resize", () => {
+          resizeCanvas();
+        });
+
+        // Start viz loop
+        drawViz();
+
+        // Auto-run on first load
+        setTimeout(run, 300);
+      });
+    </script>
+  </body>
+</html>

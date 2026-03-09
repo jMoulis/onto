@@ -1,0 +1,20 @@
+{
+  "name": "onto",
+  "version": "0.1.0",
+  "description": "Onto — Equilibration engine for tension-based programs",
+  "type": "module",
+  "scripts": {
+    "demo:single": "tsx src/demos/demo-single-agent.ts",
+    "demo:inter": "tsx src/demos/demo-inter-agent.ts",
+    "demo:types": "tsx src/demos/demo-types.ts",
+    "demo:compiler": "tsx src/demos/demo-compiler.ts",
+    "demo:observer": "tsx src/demos/demo-observer.ts",
+    "build": "tsc",
+    "start": "node dist/demos/single-agent.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.0"
+  }
+}
