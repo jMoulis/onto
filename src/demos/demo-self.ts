@@ -13,8 +13,8 @@
  * ╚═══════════════════════════════════════════════════════════════════╝
  */
 
-import { compile } from "./onto-compiler.js"
-import { OntoEngine } from "./onto-engine.js"
+import { compile } from "../core/onto-compiler.js"
+import { OntoEngine } from "../core/onto-engine.js"
 
 // The source is written in native Onto syntax.
 // Then compiled, type-checked, and equilibrated.

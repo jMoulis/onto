@@ -9,6 +9,8 @@
     "demo:types": "tsx src/demos/demo-types.ts",
     "demo:compiler": "tsx src/demos/demo-compiler.ts",
     "demo:observer": "tsx src/demos/demo-observer.ts",
+    "demo:self": "tsx src/demos/demo-self.ts",
+    "demo:dialogue": "tsx src/demos/demo-dialogue.ts",
     "build": "tsc",
     "start": "node dist/demos/single-agent.js"
   },
